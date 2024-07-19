@@ -1,9 +1,13 @@
 #!/bin/bash
+PATH=./target/bin:$PATH
 
-CURRENT_HASH=$(soroban contract install --source default --network testnet --wasm ./target/loam/smartdeploy.wasm)
+# stellar contract deploy --wasm ./target/soroban_deployer_contract.wasm --source default --alias deployer || echo "already deployed"
+
+CURRENT_HASH=$(stellar contract install --source default --network testnet --wasm ./target/loam/smartdeploy.wasm)
 echo current hash "$CURRENT_HASH"
-author=$(soroban config identity address default)
+author=$(stellar keys address default)
 echo "$author"
+
 
 FILE_HASH=""
 
@@ -17,6 +21,7 @@ if test "$CURRENT_HASH" = "$FILE_HASH"; then
 else
   FILE_HASH=""
   echo -n "$CURRENT_HASH" >./hash.txt
+
   printf -v a "%08d" $RANDOM
   printf -v b "%08d" $RANDOM
   printf -v c "%08d" $RANDOM
@@ -28,10 +33,16 @@ else
 
   SALT=$a$b$c$d$e$f$g$h
 
-  ID=$(soroban contract deploy \
-    --salt $SALT \
-    --wasm-hash $CURRENT_HASH)
-  echo -n "$ID" >contract_id.txt
+  ID=$(stellar contract invoke --id deployer -- \
+    deploy_core_subcontract \
+    --wasm-hash "$CURRENT_HASH" \
+    --deployer default \
+    --salt $SALT 
+  )
+  echo $ID;
+  loam update-env --name SOROBAN_CONTRACT_ID --value "$ID"
+  loam update-env --name SMARTDEPLOY_CONTRACT_ID --value "$ID"
+  echo -n "$ID" > contract_id.txt
 fi
 
 ID=$(cat contract_id.txt)
@@ -42,16 +53,16 @@ if test "$ID" = ""; then
 fi
 echo $ID
 
-./subscribe_events.sh $ID
+# ./subscribe_events.sh $ID
 
 # smartdeploy="soroban --quiet contract invoke --id $ID"
 
-if test "$FILE_HASH" = ""; then
-  just publish smartdeploy
-  just claim_self
-  just set_owner default
-fi
+# if test "$FILE_HASH" = ""; then
+#   just publish smartdeploy
+#   just smartdeploy claim_already_deployed_contract --deployed_name smartdeploy --owner default --id "$ID"
+#   just set_owner default
+# fi
 
 if test "$SOROBAN_NETWORK" = "testnet"; then
-  just smartdeploy_id >./crates/smartdeploy-cli/src/testnet/smartdeploy.json
+  echo "\"$ID\"" > ./crates/smartdeploy-cli/src/testnet/smartdeploy.json
 fi

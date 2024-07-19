@@ -1,5 +1,5 @@
 [package]
-name = "core-riff"
+name = "core-subcontract"
 description = "Example of Redeployable Contract"
 version = "0.1.0"
 authors = ["Stellar Development Foundation <info@stellar.org>"]
@@ -16,7 +16,7 @@ loam-sdk = { workspace = true, features = ["loam-soroban-sdk"] }
 smartdeploy-sdk = { path = "../../crates/smartdeploy-sdk", version = "0.1.5" }
 
 
-[dev_dependencies]
+[dev-dependencies]
 loam-sdk = { workspace = true, features = ["soroban-sdk-testutils"] }
 
 [package.metadata.loam]

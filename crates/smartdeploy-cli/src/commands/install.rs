@@ -41,6 +41,7 @@ impl Cmd {
         };
         let mut cmd = invoke::Cmd {
             contract_id: contract_id.to_string(),
+            is_view: true,
             config: soroban_cli::commands::config::Args {
                 network: network.clone(),
                 ..Default::default()
@@ -51,7 +52,12 @@ impl Cmd {
             .into_iter()
             .map(Into::into)
             .collect::<Vec<_>>();
-        let id = cmd.invoke(&global::Args::default()).await?;
+        let id = cmd
+            .invoke(&global::Args::default())
+            .await?
+            .into_result()
+            .expect("Missing result");
+        eprintln!("id: {id}");
         let contract_id = id.trim_matches('"');
         let out_dir = if let Some(out_dir) = self.out_dir.clone() {
             out_dir
